@@ -80,13 +80,27 @@ func parsePrivateKey(key string, pub *gost3410.PublicKey) (*gost3410.PrivateKey,
 	return privateKey, nil
 }
 
-func parsePublicKey(cert string) (*gost3410.PublicKey, error) {
+func parsePublicKeyPartOnCert(cert string) (res []byte, err error) {
 	der, err := gost_crypto.DerDecode([]byte(cert))
 	if err != nil {
 		return nil, fmt.Errorf("publicKey: %w", err)
 	}
 
-	publicKey, err := gost_crypto.ParsePKIXPublicKey(der.Bytes)
+	res, err = gost_crypto.ParseCertificate(der.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("publicKey: %w", err)
+	}
+
+	return
+}
+
+func parsePublicKey(cert string) (*gost3410.PublicKey, error) {
+	pub, err := parsePublicKeyPartOnCert(cert)
+	if err != nil {
+		return nil, fmt.Errorf("publicKey: %w", err)
+	}
+
+	publicKey, err := gost_crypto.ParsePKIXPublicKey(pub)
 	if err != nil {
 		return nil, fmt.Errorf("publicKey: %w", err)
 	}
@@ -95,12 +109,12 @@ func parsePublicKey(cert string) (*gost3410.PublicKey, error) {
 }
 
 func parseHash(cert string) (hash.Hash, error) {
-	der, err := gost_crypto.DerDecode([]byte(cert))
+	pub, err := parsePublicKeyPartOnCert(cert)
 	if err != nil {
 		return nil, fmt.Errorf("hash: %w", err)
 	}
 
-	hashFunc, err := gost_crypto.ParsePKIXPublicKeyHash(der.Bytes)
+	hashFunc, err := gost_crypto.ParsePKIXPublicKeyHash(pub)
 	if err != nil {
 		return nil, fmt.Errorf("hash: %w", err)
 	}
