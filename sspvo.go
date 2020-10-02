@@ -82,7 +82,7 @@ func (e FieldName) String() string {
 	return string(e)
 }
 
-type JWTFields map[FieldName]string
+type JWTFields map[FieldName]interface{}
 
 type Fields func(JWTFields)
 

@@ -69,7 +69,7 @@ func (r *SignResponse) SetSkipVerify(skip bool) {
 func (r *SignResponse) Data() ([]byte, error) {
 	data, err := r.Response.Data()
 	if err != nil {
-		return nil, err
+		return data, err
 	}
 	signStruct := struct {
 		ResponseToken string `json:"ResponseToken"`
@@ -96,14 +96,14 @@ func (r *SignResponse) Data() ([]byte, error) {
 
 func (r *SignResponse) parseResponseToken(responseToken string) (res *sspvo.Token) {
 	res = &sspvo.Token{}
-	parts := strings.Split(responseToken, ".")
+	parts := strings.Split(strings.TrimSpace(responseToken), ".")
 	if parts[0] == "" {
 		return res
 	}
 	res.Header = parts[0]
 	if len(parts) > 2 {
-		res.Sign = parts[2]
 		res.Payload = parts[1]
+		res.Sign = parts[2]
 	} else {
 		res.Sign = parts[1]
 	}
@@ -130,25 +130,28 @@ func (r *SignResponse) verifyResponseToken(responseToken string) (bool, error) {
 		return false, err
 	}
 
+	sign, err := base64.StdEncoding.DecodeString(token.Sign)
+	if err != nil {
+		return false, err
+	}
+
 	err = json.Unmarshal(headerData, &headerStruct)
 	if err != nil {
 		return false, err
 	}
 
-	certData, err := base64.StdEncoding.DecodeString(headerStruct.Cert64)
-	if err != nil {
-		return false, err
-	}
+	cert := "-----BEGIN CERTIFICATE-----\n" +
+		headerStruct.Cert64 +
+		"\n-----END CERTIFICATE-----"
 
-	crypto, err := r.cryptoHandler(string(certData))
+	crypto, err := r.cryptoHandler(cert)
 	if err != nil {
 		return false, err
 	}
 
 	data4digest := fmt.Sprintf("%s.%s", token.Header, token.Payload)
 	digest := crypto.Hash([]byte(data4digest))
-
-	ok, err := crypto.Verify([]byte(token.Sign), digest)
+	ok, err := crypto.Verify(sign, digest)
 	if err != nil {
 		return false, err
 	}
@@ -156,42 +159,10 @@ func (r *SignResponse) verifyResponseToken(responseToken string) (bool, error) {
 	return ok, nil
 }
 
-type CLSResponse struct {
-	Response
+func NewResponse() *Response {
+	return &Response{}
 }
 
-func NewCLSResponse(cls string) *CLSResponse {
-	return &CLSResponse{}
-}
-
-type ActionResponse struct {
-	SignResponse
-}
-
-func NewActionResponse(action, dataType string) *ActionResponse {
-	return &ActionResponse{}
-}
-
-type ConfirmResponse struct {
-	SignResponse
-}
-
-func NewConfirmResponse() *ConfirmResponse {
-	return &ConfirmResponse{}
-}
-
-type InfoResponse struct {
-	SignResponse
-}
-
-func NewInfoResponse() *InfoResponse {
-	return &InfoResponse{}
-}
-
-type InfoAllResponse struct {
-	Response
-}
-
-func NewInfoAllResponse() *InfoAllResponse {
-	return &InfoAllResponse{}
+func NewSignResponse() *SignResponse {
+	return &SignResponse{}
 }

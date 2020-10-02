@@ -10,6 +10,7 @@ package message
 import (
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 
 	"github.com/ftomza/go-sspvo"
@@ -36,7 +37,12 @@ func SetKPP(kpp string) sspvo.Fields {
 
 func setCert(cert string) sspvo.Fields {
 	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldCert] = base64.StdEncoding.EncodeToString([]byte(cert))
+		block, _ := pem.Decode([]byte(cert))
+		if block != nil {
+			f[sspvo.FieldCert] = base64.StdEncoding.EncodeToString(block.Bytes)
+			return
+		}
+		f[sspvo.FieldCert] = cert
 	}
 }
 
@@ -46,27 +52,27 @@ func setToken(token *sspvo.Token) sspvo.Fields {
 	}
 }
 
-func setIdJWT(idJWT string) sspvo.Fields {
+func setIdJWT(idJWT int) sspvo.Fields {
 	return func(f sspvo.JWTFields) {
 		f[sspvo.FieldIdJWT] = idJWT
 	}
 }
 
-func setCLS(cls string) sspvo.Fields {
+func setCLS(cls CLS) sspvo.Fields {
 	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldCLS] = cls
+		f[sspvo.FieldCLS] = cls.String()
 	}
 }
 
-func setAction(action string) sspvo.Fields {
+func setAction(action Action) sspvo.Fields {
 	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldAction] = action
+		f[sspvo.FieldAction] = action.String()
 	}
 }
 
-func setDataType(dataType string) sspvo.Fields {
+func setDatatype(dataType Datatype) sspvo.Fields {
 	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldDataType] = dataType
+		f[sspvo.FieldDataType] = dataType.String()
 	}
 }
 
@@ -104,13 +110,19 @@ type SignMessage struct {
 	data   []byte
 }
 
+func (m *SignMessage) UpdateJWTFields(fields ...sspvo.Fields) sspvo.Message {
+	m.Message.UpdateJWTFields(fields...)
+	return m
+}
+
 func (m *SignMessage) GetJWT() ([]byte, error) {
-	token, err := m.sign()
+	token, err := m.signToken()
 	if err != nil {
 		return nil, fmt.Errorf("SignMessage: %w", err)
 	}
-	m.UpdateJWTFields(setToken(token))
-	return m.Message.GetJWT()
+	fields := sspvo.JWTFields{}
+	setToken(token)(fields)
+	return json.Marshal(fields)
 }
 
 func (m *SignMessage) Init(crypto sspvo.Crypto, data []byte) {
@@ -119,7 +131,7 @@ func (m *SignMessage) Init(crypto sspvo.Crypto, data []byte) {
 	m.data = data
 }
 
-func (m *SignMessage) sign() (*sspvo.Token, error) {
+func (m *SignMessage) signToken() (*sspvo.Token, error) {
 	m.UpdateJWTFields(setCert(m.crypto.GetCert()))
 
 	jsonHeader, err := json.Marshal(m.Fields)
@@ -145,7 +157,6 @@ func (m *SignMessage) sign() (*sspvo.Token, error) {
 		return nil, sspvo.ErrBadSign
 	}
 	sign := base64.StdEncoding.EncodeToString(signDigest)
-
 	return &sspvo.Token{
 		Header:  header,
 		Payload: payload,

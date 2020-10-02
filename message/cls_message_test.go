@@ -16,7 +16,7 @@ import (
 
 func TestNewCLSMessage(t *testing.T) {
 	type args struct {
-		cls string
+		cls CLS
 	}
 	tests := []struct {
 		name string
@@ -26,11 +26,11 @@ func TestNewCLSMessage(t *testing.T) {
 		{
 			name: "ok",
 			args: args{
-				cls: "test",
+				cls: CLSDirections,
 			},
 			want: &CLSMessage{
 				Message: Message{
-					Fields: sspvo.JWTFields{sspvo.FieldCLS: "test"},
+					Fields: sspvo.JWTFields{sspvo.FieldCLS: CLSDirections.String()},
 				},
 			},
 		},

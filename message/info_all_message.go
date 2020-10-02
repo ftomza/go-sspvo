@@ -28,5 +28,5 @@ func (m *InfoAllMessage) PathMethod() string {
 }
 
 func (m *InfoAllMessage) Response() sspvo.Response {
-	return response.NewInfoAllResponse()
+	return response.NewResponse()
 }

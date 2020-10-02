@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/ftomza/go-sspvo/client"
 	"github.com/ftomza/go-sspvo/crypto"
 	"github.com/ftomza/go-sspvo/message"
-
 	"github.com/go-resty/resty/v2"
 )
 
@@ -53,15 +54,55 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gostCrypto, err := crypto.NewGostCrypto(crypto.SetCert(cert), crypto.SetKey(key))
+	gostCrypto, _ := crypto.NewGostCrypto(crypto.SetCert(cert), crypto.SetKey(key))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
-	data, err := sspvoClient.Send(ctx, message.NewActionMessage(gostCrypto, "New", "subdivision_org", nil)).Data()
+	data, err := sspvoClient.Send(ctx, message.NewActionMessage(
+		gostCrypto,
+		message.ActionAdd,
+		message.DatatypeSubdivisionOrg,
+		[]byte(`
+<?xml version="1.0" encoding="utf-8"?>
+<PackageData>
+	<SubdivisionOrg>
+		<UID>TEST69</UID>
+		<Name>Подвал</Name>
+	</SubdivisionOrg>
+</PackageData>
+	`))).Data()
+	cancel()
 	if err != nil {
 		log.Fatal(err, string(data))
 	}
 
-	log.Print(data)
+	log.Println("Add SubdivisionOrg:", string(data)) // 2020/10/01 21:09:06 Add SubdivisionOrg: {"IDJWT":"1405161"}
+
+	newMessage := struct {
+		IDJWT string `json:"IDJWT"`
+	}{}
+
+	err = json.Unmarshal(data, &newMessage)
+	if err != nil {
+		log.Fatal(err, string(data))
+	}
+
+	idJWT, _ := strconv.Atoi(newMessage.IDJWT)
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Hour)
+	data, err = sspvoClient.Send(ctx, message.NewInfoMessage(gostCrypto, idJWT)).Data()
+	cancel()
+	if err != nil {
+		log.Fatal(err, string(data))
+	}
+
+	log.Println("Info:", string(data)) //2020/10/01 21:09:07 Info: {"ResponseToken":".."}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Hour)
+	data, err = sspvoClient.Send(ctx, message.NewConfirmMessage(gostCrypto, idJWT)).Data()
+	cancel()
+	if err != nil {
+		log.Fatal(err, string(data))
+	}
+
+	log.Println("Confirm:", string(data)) //2020/10/01 21:09:08 Confirm: {"IDJWT":"1405161","Result":"true"}
 }

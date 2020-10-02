@@ -16,10 +16,10 @@ type InfoMessage struct {
 	SignMessage
 }
 
-func NewInfoMessage(crypto sspvo.Crypto, idJWT string) *InfoMessage {
+func NewInfoMessage(crypto sspvo.Crypto, idJWT int) *InfoMessage {
 	msg := &InfoMessage{}
 	msg.Init(crypto, nil)
-	msg.UpdateJWTFields(setIdJWT(idJWT))
+	msg.UpdateJWTFields(setIdJWT(idJWT), setAction(actionGetMessage))
 
 	return msg
 }
@@ -29,7 +29,7 @@ func (m *InfoMessage) PathMethod() string {
 }
 
 func (m *InfoMessage) Response() sspvo.Response {
-	resp := response.NewInfoResponse()
+	resp := response.NewSignResponse()
 	resp.SetCryptoHandler(m.crypto.GetVerifyCrypto)
 	return resp
 }

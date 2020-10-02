@@ -126,13 +126,13 @@ func (c *GostCrypto) GetVerifyCrypto(cert string) (sspvo.Crypto, error) {
 	return NewGostCrypto(SetCert(cert))
 }
 
-func (c *GostCrypto) Hash(data []byte) (hash []byte) {
+func (c GostCrypto) Hash(data []byte) (hash []byte) {
 	hash = c.Crypto.Hash(data)
 	gost_crypto.Reverse(hash)
 	return
 }
 
-func (c *GostCrypto) Sign(digest []byte) (sign []byte, err error) {
+func (c GostCrypto) Sign(digest []byte) (sign []byte, err error) {
 	if c.privateKey == nil {
 		return nil, fmt.Errorf("gost_crypto: Private Key not set")
 	}
@@ -143,7 +143,7 @@ func (c *GostCrypto) Sign(digest []byte) (sign []byte, err error) {
 	return
 }
 
-func (c *GostCrypto) Verify(sign, digest []byte) (ok bool, err error) {
+func (c GostCrypto) Verify(sign, digest []byte) (ok bool, err error) {
 	ok, err = c.publicKey.VerifyDigest(digest, sign)
 	if err != nil {
 		return false, fmt.Errorf("gost_crypto: %w", err)

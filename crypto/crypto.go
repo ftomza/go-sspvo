@@ -57,6 +57,7 @@ func (c *Crypto) GetCert() string {
 
 func (c *Crypto) Hash(data []byte) (hash []byte) {
 	hashes := c.hash
+	hashes.Reset()
 	_, _ = hashes.Write(data)
 	hash = hashes.Sum(nil)
 	return

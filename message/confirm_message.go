@@ -16,10 +16,10 @@ type ConfirmMessage struct {
 	SignMessage
 }
 
-func NewConfirmMessage(crypto sspvo.Crypto, idJWT string) *ConfirmMessage {
+func NewConfirmMessage(crypto sspvo.Crypto, idJWT int) *ConfirmMessage {
 	msg := &ConfirmMessage{}
 	msg.Init(crypto, nil)
-	msg.UpdateJWTFields(setIdJWT(idJWT))
+	msg.UpdateJWTFields(setIdJWT(idJWT), setAction(actionMessageConfirm))
 
 	return msg
 }
@@ -29,7 +29,7 @@ func (m *ConfirmMessage) PathMethod() string {
 }
 
 func (m *ConfirmMessage) Response() sspvo.Response {
-	resp := response.NewConfirmResponse()
+	resp := response.NewSignResponse()
 	resp.SetCryptoHandler(m.crypto.GetVerifyCrypto)
 	return resp
 }

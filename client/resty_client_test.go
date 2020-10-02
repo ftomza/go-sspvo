@@ -81,14 +81,14 @@ func (suite *ClientTestSuite) TestNewRestyClient() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.name, func(t *testing.T) {
+		suite.Run(tt.name, func() {
 			got, err := NewRestyClient(tt.args.rest, tt.args.opts...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewRestyClient() error = %v, wantErr %v", err, tt.wantErr)
+				suite.T().Errorf("NewRestyClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewRestyClient() got = %v, want %v", got, tt.want)
+				suite.T().Errorf("NewRestyClient() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

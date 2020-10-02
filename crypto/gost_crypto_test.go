@@ -8,6 +8,7 @@
 package crypto
 
 import (
+	"encoding/hex"
 	"hash"
 	"math/big"
 	"reflect"
@@ -80,40 +81,45 @@ SwRBBGsX0fLhLEJH+Lzm5WOkQPJ3A32BLeszoPShOUXYmMKWT+NC4v4af5uO5+tKfA+eFivOM1drMV7O
 ////AAAAAP//////////vOb6racXnoTzucrC/GMlUQIBAQQjAiEAt4eIOCHC2M7HJaLzKDZJ1XjwbHzmYLiPmVoqdlN82qk=
 -----END PRIVATE KEY-----
 `
-	testHash = []byte{87, 56, 28, 136, 2, 141, 13, 177, 208, 153, 175, 41, 157, 43, 89, 107, 207, 20, 135, 7, 253, 242, 229, 241, 4, 85, 27, 25, 56, 8, 165, 18}
+	testHash, _    = hex.DecodeString("57381c88028d0db1d099af299d2b596bcf148707fdf2e5f104551b193808a512")
+	signExtern, _  = hex.DecodeString("187c82f8f70620ae217897f49c61b059944faebaebf07f7621272dea77d8af49c86a1135c418e25a4d7612b1f1b7d4ee4b00559a7d7ee6f7c708c41453396b55")
+	signExtern2, _ = hex.DecodeString("1068bd702e8f0ff9bfafb61a78f5e7fcbd7b4ded63c6d734daa9c72a13143bd26f7bc9b249e537b04a0b84d7b508a3c6b70b3f50182d361cd050d925997ecd85")
 )
 
-func getBigInt(t *testing.T, in string) *big.Int {
+func getBigInt(t *testing.T, in, mark string) *big.Int {
 	v, ok := new(big.Int).SetString(in, 10)
 	if !ok {
 		t.Fatal("cannot convert string to bigInt")
 	}
-	println(v.Text(16))
 	return v
 }
 
 func getPublicKey(t *testing.T) *gost3410.PublicKey {
-	return &gost3410.PublicKey{
+	pub := &gost3410.PublicKey{
 		C: gost3410.CurveIdGostR34102001CryptoProXchAParamSet(),
-		X: getBigInt(t, "63233666624051439876354823295566418637012564188384438200469674371110357426634"),
-		Y: getBigInt(t, "24299932244005800117978005500793438667981994951685184390218551551204573253088"),
+		X: getBigInt(t, "63233666624051439876354823295566418637012564188384438200469674371110357426634", "puk"),
+		Y: getBigInt(t, "24299932244005800117978005500793438667981994951685184390218551551204573253088", "puk"),
 	}
+	println("Pub:", hex.EncodeToString(pub.Raw()))
+	return pub
 }
 func getPublicKey2(t *testing.T) *gost3410.PublicKey {
 	return &gost3410.PublicKey{
 		C: gost3410.CurveIdGostR34102001CryptoProXchAParamSet(),
-		X: getBigInt(t, "63233666624051439876354823295566418637012564188384438200469674371110357426634"),
-		Y: getBigInt(t, "24299932244005800117978005500793438667981994951685184390218551551204573253089"),
+		X: getBigInt(t, "63233666624051439876354823295566418637012564188384438200469674371110357426634", "puk2"),
+		Y: getBigInt(t, "24299932244005800117978005500793438667981994951685184390218551551204573253089", "puk2"),
 	}
 }
 
 func getPrivateKey(t *testing.T) *gost3410.PrivateKey {
 	key := &gost3410.PrivateKey{
 		C:   gost3410.CurveIdGostR34102001CryptoProXchAParamSet(),
-		Key: getBigInt(t, "8100551082987309382040692774861374330127499061554316741502830866978492609026"),
+		Key: getBigInt(t, "8100551082987309382040692774861374330127499061554316741502830866978492609026", "prk"),
 	}
 
 	_ = key.Public()
+
+	println("Key:", hex.EncodeToString(key.Raw()))
 	return key
 }
 
@@ -455,7 +461,9 @@ func TestGostCrypto_Hash(t *testing.T) {
 				privateKey: tt.fields.privateKey,
 				publicKey:  tt.fields.publicKey,
 			}
-			if gotHash := c.Hash(tt.args.data); !reflect.DeepEqual(gotHash, tt.wantHash) {
+			gotHash := c.Hash(tt.args.data)
+			println("Hash:", hex.EncodeToString(gotHash))
+			if !reflect.DeepEqual(gotHash, tt.wantHash) {
 				t.Errorf("Hash() = %v, want %v", gotHash, tt.wantHash)
 			}
 		})
@@ -482,6 +490,7 @@ func TestGostCrypto_Sign(t *testing.T) {
 			name: "ok",
 			fields: fields{
 				privateKey: getPrivateKey(t),
+				publicKey:  getPublicKey(t),
 			},
 			args: args{
 				digest: testHash,
@@ -505,6 +514,7 @@ func TestGostCrypto_Sign(t *testing.T) {
 				publicKey:  tt.fields.publicKey,
 			}
 			gotSign, err := c.Sign(tt.args.digest)
+			println("Sign:", hex.EncodeToString(gotSign))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Sign() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -560,15 +570,24 @@ func TestGostCrypto_Verify(t *testing.T) {
 		{
 			name: "ok extern",
 			fields: fields{
-				publicKey: getPublicKey(t),
+				privateKey: getPrivateKey(t),
+				publicKey:  getPublicKey(t),
 			},
 			args: args{
-				sign: []byte{
-					0x6f, 0xd5, 0x91, 0x95, 0xba, 0x0a, 0x0c, 0xe4, 0x35, 0xad, 0xe9, 0xd0, 0x61, 0xf8, 0x78, 0xd2,
-					0xd6, 0x70, 0x74, 0x93, 0xee, 0x3a, 0x2c, 0xb9, 0x42, 0xa6, 0x7c, 0x78, 0x99, 0x3e, 0x45, 0x68,
-					0xcd, 0x70, 0xd6, 0x8d, 0x35, 0x11, 0x6e, 0x7a, 0xf7, 0xe7, 0xfb, 0x90, 0x73, 0xe9, 0x60, 0x16,
-					0xc2, 0xc6, 0xa9, 0x57, 0xf2, 0x98, 0x38, 0xfb, 0x0a, 0x0f, 0x3b, 0x29, 0x25, 0x4a, 0x50, 0xea,
-				},
+				sign:   signExtern,
+				digest: testHash,
+			},
+			wantOk:  true,
+			wantErr: false,
+		},
+		{
+			name: "ok extern2",
+			fields: fields{
+				privateKey: getPrivateKey(t),
+				publicKey:  getPublicKey(t),
+			},
+			args: args{
+				sign:   signExtern2,
 				digest: testHash,
 			},
 			wantOk:  true,
