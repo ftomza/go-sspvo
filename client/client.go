@@ -22,18 +22,21 @@ type options struct {
 
 type Option func(*options)
 
+//SetAPIBase To set the apiBase option that points to the base path when calling methods
 func SetAPIBase(apiBase string) Option {
 	return func(o *options) {
 		o.apiBase = apiBase
 	}
 }
 
+//SetOGRN To set the ogrn option used when creating authentication headers
 func SetOGRN(ogrn string) Option {
 	return func(o *options) {
 		o.ogrn = ogrn
 	}
 }
 
+//SetKPP To set the kpp option used when creating authentication headers
 func SetKPP(kpp string) Option {
 	return func(o *options) {
 		o.kpp = kpp
