@@ -118,7 +118,7 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestClient_prepareBody(t *testing.T) {
+func TestClient_PrepareBody(t *testing.T) {
 	type fields struct {
 		opts *options
 	}
@@ -168,7 +168,7 @@ func TestClient_prepareBody(t *testing.T) {
 			c := &Client{
 				opts: tt.fields.opts,
 			}
-			got, err := c.prepareBody(tt.args.msg)
+			got, err := c.PrepareBody(tt.args.msg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("prepareBody() error = %v, wantErr %v", err, tt.wantErr)
 				return

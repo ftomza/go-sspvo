@@ -155,6 +155,7 @@ type CLSMessage struct {
 
 func NewCLSMessage(cls CLS) *CLSMessage {
 	msg := &CLSMessage{}
+	msg.Init()
 	msg.UpdateJWTFields(setCLS(cls))
 
 	return msg

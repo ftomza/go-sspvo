@@ -35,7 +35,35 @@ eyJJREpXVCI6MTEwMjI5NiwiZGF0YV90eXBlIjoiU3VjY2VzcyIsIkNlcnQ2NCI6Ik1JSUVZVENDQkJD
 `
 	dataToken      = []byte(`{"ResponseToken": "` + strings.TrimSpace(validResponseToken) + `"}`)
 	dataEmptyToken = []byte(`{"ResponseToken": ""}`)
+	validCert      = `
+-----BEGIN CERTIFICATE-----
+MIIEfDCCBCmgAwIBAgIEXek0LjAKBggqhQMHAQEDAjCB8TELMAkGA1UEBhMCUlUxKjAoBgNVBAgMIdCh0LDQvdC60YLRii3Q
+n9C10YLQtdGA0LHRg9GA0LPRijEuMCwGA1UECgwl0JbRg9GA0L3QsNC7ICLQodC+0LLRgNC10LzQtdC90L3QuNC6IjEfMB0G
+A1UECwwW0KDRg9C60L7QstC+0LTRgdGC0LLQvjEoMCYGA1UEDAwf0JPQu9Cw0LLQvdGL0Lkg0YDQtdC00LDQutGC0L7RgDE7
+MDkGA1UEAwwy0JDQu9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhyDQn9GD0YjQutC40L0wHhcNMjAwOTIyMjEw
+MDAwWhcNNDAwOTIyMjEwMDAwWjCB8TELMAkGA1UEBhMCUlUxKjAoBgNVBAgMIdCh0LDQvdC60YLRii3Qn9C10YLQtdGA0LHR
+g9GA0LPRijEuMCwGA1UECgwl0JbRg9GA0L3QsNC7ICLQodC+0LLRgNC10LzQtdC90L3QuNC6IjEfMB0GA1UECwwW0KDRg9C6
+0L7QstC+0LTRgdGC0LLQvjEoMCYGA1UEDAwf0JPQu9Cw0LLQvdGL0Lkg0YDQtdC00LDQutGC0L7RgDE7MDkGA1UEAwwy0JDQ
+u9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhyDQn9GD0YjQutC40L0wZjAfBggqhQMHAQEBATATBgcqhQMCAiQA
+BggqhQMHAQECAgNDAARAyuHXvOdPT/R94KICw82bdgiBfEXkEJxqXIN4uav8zIvgDe/q7yzK+HJnbLWLIWc2z+eqbaiUbj0Y
+e1RoNUa5NaOCAZ4wggGaMA4GA1UdDwEB/wQEAwIB/jAxBgNVHSUEKjAoBggrBgEFBQcDAQYIKwYBBQUHAwIGCCsGAQUFBwMD
+BggrBgEFBQcDBDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBSalTlfa+t/MpLv76stCkVlU18TazCCASMGA1UdIwSCARow
+ggEWgBSalTlfa+t/MpLv76stCkVlU18Ta6GB96SB9DCB8TELMAkGA1UEBhMCUlUxKjAoBgNVBAgMIdCh0LDQvdC60YLRii3Q
+n9C10YLQtdGA0LHRg9GA0LPRijEuMCwGA1UECgwl0JbRg9GA0L3QsNC7ICLQodC+0LLRgNC10LzQtdC90L3QuNC6IjEfMB0G
+A1UECwwW0KDRg9C60L7QstC+0LTRgdGC0LLQvjEoMCYGA1UEDAwf0JPQu9Cw0LLQvdGL0Lkg0YDQtdC00LDQutGC0L7RgDE7
+MDkGA1UEAwwy0JDQu9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhyDQn9GD0YjQutC40L2CBF3pNC4wCgYIKoUD
+BwEBAwIDQQBlY4HdS/G7zAWOEWH6pBx4FSli5ipbEtvr/lkjEApvlrch5cMlmy7rglAbE7ct+sKFtDKv6cIhqu3rQMAla/gb
+-----END CERTIFICATE-----
+`
 )
+
+func getCrypto(t *testing.T, cert string) sspvo.Crypto {
+	crpt, err := crypto.NewGostCrypto(crypto.SetCert(cert))
+	if err != nil {
+		t.Error(err)
+	}
+	return crpt
+}
 
 type ResponseTestSuite struct {
 	suite.Suite
@@ -57,6 +85,7 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 	suite.Run("ok", func() {
 		suite.crypto.On("Verify", mock.Anything, mock.Anything).Return(true, nil).Once()
 		suite.crypto.On("Hash", mock.Anything).Return([]byte("TEST")).Once()
+		suite.crypto.On("GetVerifyCrypto", mock.AnythingOfType("string")).Return(suite.crypto, nil).Once()
 
 		response := &SignResponse{
 			Response: Response{
@@ -66,9 +95,7 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 				},
 			},
 			skipVerify: false,
-			cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-				return suite.crypto, nil
-			},
+			crypto:     suite.crypto,
 		}
 
 		b, err := response.Data()
@@ -86,9 +113,7 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 				},
 			},
 			skipVerify: false,
-			cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-				return suite.crypto, nil
-			},
+			crypto:     suite.crypto,
 		}
 
 		b, err := response.Data()
@@ -129,9 +154,10 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 		suite.Nil(b)
 		suite.crypto.AssertExpectations(suite.T())
 	})
-	suite.Run("fail verify", func() {
-		suite.crypto.On("Verify", mock.Anything, mock.Anything).Return(false, errors.New("fail")).Once()
-		suite.crypto.On("Hash", mock.Anything).Return([]byte("TEST")).Once()
+	suite.Run("fail get verify crypto", func() {
+		//suite.crypto.On("Verify", mock.Anything, mock.Anything).Return(false, errors.New("fail")).Once()
+		//suite.crypto.On("Hash", mock.Anything).Return([]byte("TEST")).Once()
+		suite.crypto.On("GetVerifyCrypto", mock.AnythingOfType("string")).Return(nil, errors.New("fail")).Once()
 		response := &SignResponse{
 			Response: Response{
 				resp: &sspvo.ClientResponse{
@@ -139,9 +165,26 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 					Body: dataToken,
 				},
 			},
-			cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-				return suite.crypto, nil
+			crypto: suite.crypto,
+		}
+
+		b, err := response.Data()
+		suite.Error(err)
+		suite.Nil(b)
+		suite.crypto.AssertExpectations(suite.T())
+	})
+	suite.Run("fail verify", func() {
+		suite.crypto.On("Verify", mock.Anything, mock.Anything).Return(false, errors.New("fail")).Once()
+		suite.crypto.On("Hash", mock.Anything).Return([]byte("TEST")).Once()
+		suite.crypto.On("GetVerifyCrypto", mock.AnythingOfType("string")).Return(suite.crypto, nil).Once()
+		response := &SignResponse{
+			Response: Response{
+				resp: &sspvo.ClientResponse{
+					Code: http.StatusOK,
+					Body: dataToken,
+				},
 			},
+			crypto: suite.crypto,
 		}
 
 		b, err := response.Data()
@@ -152,6 +195,7 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 	suite.Run("false verify", func() {
 		suite.crypto.On("Verify", mock.Anything, mock.Anything).Return(false, nil).Once()
 		suite.crypto.On("Hash", mock.Anything).Return([]byte("TEST")).Once()
+		suite.crypto.On("GetVerifyCrypto", mock.AnythingOfType("string")).Return(suite.crypto, nil).Once()
 		response := &SignResponse{
 			Response: Response{
 				resp: &sspvo.ClientResponse{
@@ -159,9 +203,7 @@ func (suite *ResponseTestSuite) TestSignResponse_Data() {
 					Body: dataToken,
 				},
 			},
-			cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-				return suite.crypto, nil
-			},
+			crypto: suite.crypto,
 		}
 
 		b, err := response.Data()
@@ -225,9 +267,9 @@ func TestResponse_Data(t *testing.T) {
 
 func TestSignResponse_parseResponseToken(t *testing.T) {
 	type fields struct {
-		Response      Response
-		skipVerify    bool
-		cryptoHandler func(cert string) (sspvo.Crypto, error)
+		Response   Response
+		skipVerify bool
+		crypto     sspvo.Crypto
 	}
 	type args struct {
 		responseToken string
@@ -273,9 +315,9 @@ func TestSignResponse_parseResponseToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &SignResponse{
-				Response:      tt.fields.Response,
-				skipVerify:    tt.fields.skipVerify,
-				cryptoHandler: tt.fields.cryptoHandler,
+				Response:   tt.fields.Response,
+				skipVerify: tt.fields.skipVerify,
+				crypto:     tt.fields.crypto,
 			}
 			if gotRes := r.parseResponseToken(tt.args.responseToken); !reflect.DeepEqual(gotRes, tt.wantRes) {
 				t.Errorf("parseResponseToken() = %v, want %v", gotRes, tt.wantRes)
@@ -286,9 +328,9 @@ func TestSignResponse_parseResponseToken(t *testing.T) {
 
 func TestSignResponse_verifyResponseToken(t *testing.T) {
 	type fields struct {
-		Response      Response
-		skipVerify    bool
-		cryptoHandler func(cert string) (sspvo.Crypto, error)
+		Response   Response
+		skipVerify bool
+		crypto     sspvo.Crypto
 	}
 	type args struct {
 		responseToken string
@@ -305,9 +347,7 @@ func TestSignResponse_verifyResponseToken(t *testing.T) {
 			fields: fields{
 				Response:   Response{},
 				skipVerify: false,
-				cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-					return crypto.NewGostCrypto(crypto.SetCert(cert))
-				},
+				crypto:     getCrypto(t, validCert),
 			},
 			args: args{
 				responseToken: validResponseToken,
@@ -320,9 +360,7 @@ func TestSignResponse_verifyResponseToken(t *testing.T) {
 			fields: fields{
 				Response:   Response{},
 				skipVerify: false,
-				cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-					return crypto.NewGostCrypto(crypto.SetCert(cert))
-				},
+				crypto:     getCrypto(t, validCert),
 			},
 			args: args{
 				responseToken: falseResponseToken,
@@ -395,9 +433,7 @@ func TestSignResponse_verifyResponseToken(t *testing.T) {
 			fields: fields{
 				Response:   Response{},
 				skipVerify: false,
-				cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-					return nil, errors.New("fail")
-				},
+				crypto:     getCrypto(t, validCert),
 			},
 			args: args{
 				responseToken: "e30=.VEVTVA==.VEVTVA==",
@@ -410,9 +446,7 @@ func TestSignResponse_verifyResponseToken(t *testing.T) {
 			fields: fields{
 				Response:   Response{},
 				skipVerify: false,
-				cryptoHandler: func(cert string) (sspvo.Crypto, error) {
-					return crypto.NewGostCrypto(crypto.SetCert(cert))
-				},
+				crypto:     getCrypto(t, validCert),
 			},
 			args: args{
 				responseToken: badResponseToken,
@@ -424,9 +458,9 @@ func TestSignResponse_verifyResponseToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &SignResponse{
-				Response:      tt.fields.Response,
-				skipVerify:    tt.fields.skipVerify,
-				cryptoHandler: tt.fields.cryptoHandler,
+				Response:   tt.fields.Response,
+				skipVerify: tt.fields.skipVerify,
+				crypto:     tt.fields.crypto,
 			}
 			got, err := r.verifyResponseToken(tt.args.responseToken)
 			if (err != nil) != tt.wantErr {

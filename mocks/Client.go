@@ -14,6 +14,29 @@ type Client struct {
 	mock.Mock
 }
 
+// PrepareBody provides a mock function with given fields: msg
+func (_m *Client) PrepareBody(msg sspvo.Message) ([]byte, error) {
+	ret := _m.Called(msg)
+
+	var r0 []byte
+	if rf, ok := ret.Get(0).(func(sspvo.Message) []byte); ok {
+		r0 = rf(msg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(sspvo.Message) error); ok {
+		r1 = rf(msg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Send provides a mock function with given fields: ctx, msg
 func (_m *Client) Send(ctx context.Context, msg sspvo.Message) sspvo.Response {
 	ret := _m.Called(ctx, msg)
