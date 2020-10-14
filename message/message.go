@@ -13,6 +13,8 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"github.com/ftomza/go-sspvo/response"
+
 	"github.com/ftomza/go-sspvo"
 )
 
@@ -24,56 +26,40 @@ const (
 )
 
 func SetOGRN(ogrn string) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldOGRN] = ogrn
-	}
+	return sspvo.SetField(sspvo.FieldOGRN, ogrn)
 }
 
 func SetKPP(kpp string) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldKPP] = kpp
-	}
+	return sspvo.SetField(sspvo.FieldKPP, kpp)
 }
 
 func setCert(cert string) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		block, _ := pem.Decode([]byte(cert))
-		if block != nil {
-			f[sspvo.FieldCert] = base64.StdEncoding.EncodeToString(block.Bytes)
-			return
-		}
-		f[sspvo.FieldCert] = cert
+	block, _ := pem.Decode([]byte(cert))
+	if block != nil {
+		cert = base64.StdEncoding.EncodeToString(block.Bytes)
 	}
+
+	return sspvo.SetField(sspvo.FieldCert, cert)
 }
 
 func setToken(token *sspvo.Token) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldToken] = fmt.Sprintf("%s.%s.%s", token.Header, token.Payload, token.Sign)
-	}
+	return sspvo.SetField(sspvo.FieldToken, fmt.Sprintf("%s.%s.%s", token.Header, token.Payload, token.Sign))
 }
 
 func setIdJWT(idJWT int) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldIdJWT] = idJWT
-	}
+	return sspvo.SetField(sspvo.FieldIdJWT, idJWT)
 }
 
 func setCLS(cls CLS) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldCLS] = cls.String()
-	}
+	return sspvo.SetField(sspvo.FieldCLS, cls.String())
 }
 
 func setAction(action Action) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldAction] = action.String()
-	}
+	return sspvo.SetField(sspvo.FieldAction, action.String())
 }
 
 func setDatatype(dataType Datatype) sspvo.Fields {
-	return func(f sspvo.JWTFields) {
-		f[sspvo.FieldDataType] = dataType.String()
-	}
+	return sspvo.SetField(sspvo.FieldDataType, dataType.String())
 }
 
 type Message struct {
@@ -100,8 +86,7 @@ func (m *Message) GetJWT() ([]byte, error) {
 }
 
 func (m *Message) Response() sspvo.Response {
-
-	panic("not implement")
+	return response.NewResponse()
 }
 
 type SignMessage struct {
@@ -123,6 +108,10 @@ func (m *SignMessage) GetJWT() ([]byte, error) {
 	fields := sspvo.JWTFields{}
 	setToken(token)(fields)
 	return json.Marshal(fields)
+}
+
+func (m *SignMessage) Response() sspvo.Response {
+	return response.NewSignResponse(m.crypto, false)
 }
 
 func (m *SignMessage) Init(crypto sspvo.Crypto, data []byte) {

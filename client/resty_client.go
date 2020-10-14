@@ -16,12 +16,14 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+//RestyClient Client structure that implements the sspvo.Client interface using the rest client resty.Client.
 type RestyClient struct {
 	Client
 
 	rest *resty.Client
 }
 
+//NewRestyClient Creating a new RestyClient, supports the following options: SetOGRN, SetKPP, SetAPIBase and instance resty.Client.
 func NewRestyClient(rest *resty.Client, opts ...Option) (sspvo.Client, error) {
 	client, err := NewClient(opts...)
 	if err != nil {
@@ -34,11 +36,12 @@ func NewRestyClient(rest *resty.Client, opts ...Option) (sspvo.Client, error) {
 	}, nil
 }
 
+//Send a instance message, see message.Message, with the specified context and return an instance of the prepared response based on the interface sspvo.Response
 func (c *RestyClient) Send(ctx context.Context, msg sspvo.Message) (res sspvo.Response) {
 
 	res = msg.Response()
 
-	body, err := c.prepareBody(msg)
+	body, err := c.PrepareBody(msg)
 	if err != nil {
 		res.SetError(fmt.Errorf("client prepare body: %w", err))
 		return

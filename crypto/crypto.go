@@ -19,23 +19,27 @@ type options struct {
 
 type Option func(*options)
 
+//SetCert To set the cert option. Assigns a certificate in the DER x509 format.
 func SetCert(cert string) Option {
 	return func(o *options) {
 		o.cert = cert
 	}
 }
 
+//SetKey To set the key option. Assigns a Private Key in the DER PKCS8 format.
 func SetKey(key string) Option {
 	return func(o *options) {
 		o.key = key
 	}
 }
 
+//Crypto Basic structure that implements the sspvo.Crypto interface.
 type Crypto struct {
 	opts *options
 	hash hash.Hash
 }
 
+//NewCrypto Creating a new base Crypto, supports the following options: SetCert, SetKey(Optional).
 func NewCrypto(opts ...Option) (Crypto, error) {
 	o := options{}
 	for _, opt := range opts {
@@ -51,10 +55,12 @@ func NewCrypto(opts ...Option) (Crypto, error) {
 	}, nil
 }
 
+//GetCert Receive options cert
 func (c *Crypto) GetCert() string {
 	return c.opts.cert
 }
 
+//Hash Get hash(digest) of data
 func (c *Crypto) Hash(data []byte) (hash []byte) {
 	hashes := c.hash
 	hashes.Reset()
