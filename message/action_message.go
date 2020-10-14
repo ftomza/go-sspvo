@@ -9,9 +9,9 @@ package message
 
 import (
 	"github.com/ftomza/go-sspvo"
-	"github.com/ftomza/go-sspvo/response"
 )
 
+//Action Enumeration of available actions.
 type Action string
 
 const (
@@ -33,6 +33,7 @@ var AllAction = []Action{
 	actionMessageConfirm,
 }
 
+//IsValid Checking the action that it belongs to an enumeration
 func (e Action) IsValid() bool {
 	switch e {
 	case ActionAdd,
@@ -46,10 +47,12 @@ func (e Action) IsValid() bool {
 	return false
 }
 
+//String representation of an enumeration
 func (e Action) String() string {
 	return string(e)
 }
 
+//Datatype Enumeration of available data types.
 type Datatype string
 
 const (
@@ -126,6 +129,7 @@ var AllDataType = []Datatype{
 	DatatypeEntrantPhotoFiles,
 }
 
+//IsValid Checking the data type that it belongs to an enumeration
 func (e Datatype) IsValid() bool {
 	switch e {
 	case DatatypeSubdivisionOrg,
@@ -167,10 +171,12 @@ func (e Datatype) IsValid() bool {
 	return false
 }
 
+//String representation of an enumeration
 func (e Datatype) String() string {
 	return string(e)
 }
 
+//ActionMessage Action Message, with support for sspvo.Crypto
 type ActionMessage struct {
 	SignMessage
 }
@@ -185,10 +191,4 @@ func NewActionMessage(crypto sspvo.Crypto, action Action, datatype Datatype, dat
 
 func (m *ActionMessage) PathMethod() string {
 	return pathMethodAction
-}
-
-func (m *ActionMessage) Response() sspvo.Response {
-	resp := response.NewSignResponse()
-	resp.SetCryptoHandler(m.crypto.GetVerifyCrypto)
-	return resp
 }

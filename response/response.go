@@ -54,16 +54,8 @@ func (r *Response) Data() ([]byte, error) {
 
 type SignResponse struct {
 	Response
-	skipVerify    bool
-	cryptoHandler func(cert string) (sspvo.Crypto, error)
-}
-
-func (r *SignResponse) SetCryptoHandler(handler func(cert string) (sspvo.Crypto, error)) {
-	r.cryptoHandler = handler
-}
-
-func (r *SignResponse) SetSkipVerify(skip bool) {
-	r.skipVerify = skip
+	skipVerify bool
+	crypto     sspvo.Crypto
 }
 
 func (r *SignResponse) Data() ([]byte, error) {
@@ -144,7 +136,7 @@ func (r *SignResponse) verifyResponseToken(responseToken string) (bool, error) {
 		headerStruct.Cert64 +
 		"\n-----END CERTIFICATE-----"
 
-	crypto, err := r.cryptoHandler(cert)
+	crypto, err := r.crypto.GetVerifyCrypto(cert)
 	if err != nil {
 		return false, err
 	}
@@ -163,6 +155,9 @@ func NewResponse() *Response {
 	return &Response{}
 }
 
-func NewSignResponse() *SignResponse {
-	return &SignResponse{}
+func NewSignResponse(crypto sspvo.Crypto, skipVerify bool) *SignResponse {
+	return &SignResponse{
+		skipVerify: skipVerify,
+		crypto:     crypto,
+	}
 }

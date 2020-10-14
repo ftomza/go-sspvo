@@ -20,12 +20,14 @@ import (
 	"github.com/ftomza/gogost/gost3410"
 )
 
+//GostCrypto Crypto structure that implements the sspvo.Crypto interface using the crypto package gost3410.
 type GostCrypto struct {
 	Crypto
 	privateKey *gost3410.PrivateKey
 	publicKey  *gost3410.PublicKey
 }
 
+//NewGostCrypto Creating a new GostCrypto, supports the following options: SetCert, SetKey(Optional).
 func NewGostCrypto(opts ...Option) (sspvo.Crypto, error) {
 	crypto, err := NewCrypto(opts...)
 	if err != nil {
@@ -122,16 +124,19 @@ func parseHash(cert string) (hash.Hash, error) {
 	return hashFunc, nil
 }
 
+//GetVerifyCrypto Get crypto instance for verify by cert
 func (c *GostCrypto) GetVerifyCrypto(cert string) (sspvo.Crypto, error) {
 	return NewGostCrypto(SetCert(cert))
 }
 
+//Hash Get a hash(digest) based on the subtleties of GOST
 func (c GostCrypto) Hash(data []byte) (hash []byte) {
 	hash = c.Crypto.Hash(data)
 	gost_crypto.Reverse(hash)
 	return
 }
 
+//Sign the digest using the private key generated during initialization
 func (c GostCrypto) Sign(digest []byte) (sign []byte, err error) {
 	if c.privateKey == nil {
 		return nil, fmt.Errorf("gost_crypto: Private Key not set")
@@ -143,6 +148,7 @@ func (c GostCrypto) Sign(digest []byte) (sign []byte, err error) {
 	return
 }
 
+//Verify the digest signature with the public key generated at the time of initialization
 func (c GostCrypto) Verify(sign, digest []byte) (ok bool, err error) {
 	ok, err = c.publicKey.VerifyDigest(digest, sign)
 	if err != nil {

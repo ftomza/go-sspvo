@@ -7,11 +7,6 @@
 
 package message
 
-import (
-	"github.com/ftomza/go-sspvo"
-	"github.com/ftomza/go-sspvo/response"
-)
-
 type CLS string
 
 const (
@@ -160,7 +155,6 @@ type CLSMessage struct {
 
 func NewCLSMessage(cls CLS) *CLSMessage {
 	msg := &CLSMessage{}
-	msg.Init()
 	msg.UpdateJWTFields(setCLS(cls))
 
 	return msg
@@ -168,8 +162,4 @@ func NewCLSMessage(cls CLS) *CLSMessage {
 
 func (m *CLSMessage) PathMethod() string {
 	return pathMethodCLS
-}
-
-func (m *CLSMessage) Response() sspvo.Response {
-	return response.NewResponse()
 }

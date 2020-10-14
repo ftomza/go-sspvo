@@ -9,7 +9,6 @@ package message
 
 import (
 	"github.com/ftomza/go-sspvo"
-	"github.com/ftomza/go-sspvo/response"
 )
 
 type InfoMessage struct {
@@ -26,10 +25,4 @@ func NewInfoMessage(crypto sspvo.Crypto, idJWT int) *InfoMessage {
 
 func (m *InfoMessage) PathMethod() string {
 	return pathMethodInfo
-}
-
-func (m *InfoMessage) Response() sspvo.Response {
-	resp := response.NewSignResponse()
-	resp.SetCryptoHandler(m.crypto.GetVerifyCrypto)
-	return resp
 }

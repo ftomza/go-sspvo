@@ -31,6 +31,7 @@ type Crypto interface {
 
 type Client interface {
 	Send(ctx context.Context, msg Message) (res Response)
+	PrepareBody(msg Message) ([]byte, error)
 }
 
 type Token struct {
@@ -85,6 +86,12 @@ func (e FieldName) String() string {
 type JWTFields map[FieldName]interface{}
 
 type Fields func(JWTFields)
+
+func SetField(field FieldName, value interface{}) Fields {
+	return func(f JWTFields) {
+		f[field] = value
+	}
+}
 
 type Message interface {
 	UpdateJWTFields(fields ...Fields) Message

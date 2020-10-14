@@ -22,31 +22,33 @@ type options struct {
 
 type Option func(*options)
 
-//SetAPIBase To set the apiBase option that points to the base path when calling methods
+//SetAPIBase To set the apiBase option that points to the base path when calling methods.
 func SetAPIBase(apiBase string) Option {
 	return func(o *options) {
 		o.apiBase = apiBase
 	}
 }
 
-//SetOGRN To set the ogrn option used when creating authentication headers
+//SetOGRN To set the ogrn option used when creating authentication headers.
 func SetOGRN(ogrn string) Option {
 	return func(o *options) {
 		o.ogrn = ogrn
 	}
 }
 
-//SetKPP To set the kpp option used when creating authentication headers
+//SetKPP To set the kpp option used when creating authentication headers.
 func SetKPP(kpp string) Option {
 	return func(o *options) {
 		o.kpp = kpp
 	}
 }
 
+//Client Basic structure that implements the sspvo.Client interface.
 type Client struct {
 	opts *options
 }
 
+//NewClient Creating a new base Client, supports the following options: SetOGRN, SetKPP, SetAPIBase.
 func NewClient(opts ...Option) (Client, error) {
 	o := options{}
 	for _, opt := range opts {
@@ -66,7 +68,7 @@ func NewClient(opts ...Option) (Client, error) {
 	}, nil
 }
 
-func (c *Client) prepareBody(msg sspvo.Message) ([]byte, error) {
+func (c *Client) PrepareBody(msg sspvo.Message) ([]byte, error) {
 
 	body, err := msg.UpdateJWTFields(message.SetKPP(c.opts.kpp), message.SetOGRN(c.opts.ogrn)).GetJWT()
 	if err != nil {
