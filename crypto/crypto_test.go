@@ -102,3 +102,36 @@ func TestCrypto_Hash(t *testing.T) {
 		})
 	}
 }
+
+func TestCrypto_GetCert(t *testing.T) {
+	type fields struct {
+		opts *options
+		hash hash.Hash
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "ok",
+			fields: fields{
+				opts: &options{
+					cert: "TEST",
+				},
+			},
+			want: "TEST",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Crypto{
+				opts: tt.fields.opts,
+				hash: tt.fields.hash,
+			}
+			if got := c.GetCert(); got != tt.want {
+				t.Errorf("GetCert() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
