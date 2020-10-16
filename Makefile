@@ -1,6 +1,6 @@
 PROJECT_NAME := "go-sspvo"
 PKG := "github.com/ftomza/$(PROJECT_NAME)"
-PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/ | grep -v /example/ | grep -v /mocks/)
+PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/ | grep -v /example/ | grep -v /mocks/ | grep -v /test_server_epgu/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 
 .PHONY: all lint vet test test-coverage build clean
